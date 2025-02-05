@@ -6,7 +6,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes
 
 # Configuración del bot
-BOT_TOKEN = os.getenv('5550034274:AAEKiVBERTud_7aMlD6V3i5APKWfaOi2LFE')
+BOT_TOKEN = os.getenv('5550034274:AAH4BSeWk-mpM4lTo_y5JSYrQQALxZSHFoM')
 BOT_USERNAME = '@itsmeallejandro'
 BOT_DESCRIPTION = """
 🎥 **Descargador Universal** 🎵
