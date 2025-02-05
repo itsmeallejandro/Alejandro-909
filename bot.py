@@ -1,24 +1,9 @@
 import os
-import re
 import logging
 import zipfile
-from threading import Thread
 from yt_dlp import YoutubeDL
-from spotipy import Spotify
-from spotipy.oauth2 import SpotifyClientCredentials
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes
-
-# Configuración de Spotify
-SPOTIFY_CLIENT_ID = os.getenv('SPOTIFY_CLIENT_ID')
-SPOTIFY_CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET')
-
-# Configuración de yt-dlp
-YDL_OPTS = {
-    'restrictfilenames': True,
-    'outtmpl': '%(title)s.%(ext)s',
-    'quiet': True,
-}
 
 # Configuración del bot
 BOT_TOKEN = os.getenv('5550034274:AAEKiVBERTud_7aMlD6V3i5APKWfaOi2LFE')
@@ -27,7 +12,7 @@ BOT_DESCRIPTION = """
 🎥 **Descargador Universal** 🎵
 ¡Hola! Soy un bot creado por @itsmeallejandro. Conmigo puedes descargar:
 - Vídeos de YouTube, TikTok, Instagram, etc.
-- Música de Spotify, YouTube y más.
+- Música de YouTube y más.
 - Archivos de todo tipo (comprimidos en ZIP).
 
 ✨ **Características principales:**
@@ -45,11 +30,12 @@ BOT_DESCRIPTION = """
 👤 **Creado por:** @itsmeallejandro
 """
 
-# Inicialización de Spotify
-sp = Spotify(auth_manager=SpotifyClientCredentials(
-    client_id=SPOTIFY_CLIENT_ID,
-    client_secret=SPOTIFY_CLIENT_SECRET
-))
+# Configuración de yt-dlp
+YDL_OPTS = {
+    'restrictfilenames': True,
+    'outtmpl': '%(title)s.%(ext)s',
+    'quiet': True,
+}
 
 # Logging
 logging.basicConfig(
@@ -82,32 +68,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Por favor, envía un enlace válido.")
         return
 
-    # Verificar si es un enlace de Spotify
-    if re.match(r'^https://open.spotify.com/(track|album|playlist)/[a-zA-Z0-9]+', url):
-        await handle_spotify_url(update, context, url)
-    else:
-        # Mostrar opciones de descarga
-        keyboard = [
-            [InlineKeyboardButton("🎥 Descargar Vídeo", callback_data=f"video:{url}")],
-            [InlineKeyboardButton("🎵 Descargar Audio", callback_data=f"audio:{url}")],
-            [InlineKeyboardButton("📦 Descargar Archivo", callback_data=f"file:{url}")],
-            [InlineKeyboardButton("❌ Cancelar", callback_data="cancel")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text(
-            "¿Qué formato deseas descargar?",
-            reply_markup=reply_markup
-        )
-
-async def handle_spotify_url(update: Update, context: ContextTypes.DEFAULT_TYPE, url):
-    try:
-        items = get_spotify_info(url)
-        for item in items:
-            track_info = item['track'] if 'track' in item else item
-            query = f"{track_info['name']} {track_info['artists'][0]['name']}"
-            await download_and_send(update, context, f"ytsearch:{query}", audio_only=True)
-    except Exception as e:
-        await update.message.reply_text(f"Error al procesar el enlace de Spotify: {str(e)}")
+    # Mostrar opciones de descarga
+    keyboard = [
+        [InlineKeyboardButton("🎥 Descargar Vídeo", callback_data=f"video:{url}")],
+        [InlineKeyboardButton("🎵 Descargar Audio", callback_data=f"audio:{url}")],
+        [InlineKeyboardButton("📦 Descargar Archivo", callback_data=f"file:{url}")],
+        [InlineKeyboardButton("❌ Cancelar", callback_data="cancel")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(
+        "¿Qué formato deseas descargar?",
+        reply_markup=reply_markup
+    )
 
 async def download_and_send(update: Update, context: ContextTypes.DEFAULT_TYPE, url, audio_only=False, file_only=False):
     try:
@@ -183,18 +155,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Envía el enlace del archivo que deseas descargar y selecciona la opción 'Descargar Archivo'.",
             parse_mode='Markdown'
         )
-
-def get_spotify_info(url):
-    if 'track' in url:
-        track = sp.track(url)
-        return [track]
-    elif 'album' in url:
-        album = sp.album_tracks(url)
-        return album['items']
-    elif 'playlist' in url:
-        results = sp.playlist_items(url)
-        return results['items']
-    return []
 
 # Configuración del bot de Telegram
 def main():
